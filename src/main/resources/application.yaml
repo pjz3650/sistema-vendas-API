@@ -1,0 +1,32 @@
+server:
+  port: 8081
+
+spring:
+  config:
+    import: optional:file:.env[.properties]
+  data:
+    mongodb:
+      uri: ${URI}
+  application:
+    name: vendas
+    version: 1.0.0
+
+springdoc:
+  swagger-ui:
+    path: /swagger
+  api-docs:
+    path: /openapi
+
+resilience4j:
+  retry:
+    instances:
+      adicionarVendaRetry:
+        maxAttempts: 5
+        waitDuration: 100
+        retry-exceptions:
+          - java.lang.RuntimeException
+
+logging:
+  level:
+    com.picpay.vendas: DEBUG
+    feign: DEBUG

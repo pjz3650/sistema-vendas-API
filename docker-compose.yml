@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  mongo:
+    image: mongo:7.0
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: adm
+      MONGO_INITDB_ROOT_PASSWORD: adm123
+      MONGO_INITDB_DATABASE: sistema_produtos
+    ports:
+      - "27017:27017"
+
+  app:
+    image: pratica-sistema-produtos
+    env_file:
+      - .env
+    depends_on:
+      - mongo
