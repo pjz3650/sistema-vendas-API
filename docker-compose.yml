@@ -11,8 +11,12 @@ services:
       - "27017:27017"
 
   app:
-    image: pratica-sistema-produtos
+    build: .
     env_file:
       - .env
+    ports:
+      - "8081:8081"
     depends_on:
       - mongo
+    environment:
+      URI: mongodb://adm:adm123@mongo:27017/sistema_produtos?authSource=admin

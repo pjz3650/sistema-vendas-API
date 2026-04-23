@@ -10,6 +10,26 @@ spring:
   application:
     name: vendas
     version: 1.0.0
+  cloud:
+    openfeign:
+      client:
+        config:
+          default:
+            level: FULL
+            connectTimeout: 2000
+            readTimeout: 5000
+            loggerLevel: basic
+          produtoClient:
+            loggerLevel: full
+            connectTimeout: 1000
+            readTimeout: 3000
+
+app:
+  client-id: vendas-service
+
+integrations:
+  produto:
+    api-version: v1
 
 springdoc:
   swagger-ui:
@@ -24,7 +44,7 @@ resilience4j:
         maxAttempts: 5
         waitDuration: 100
         retry-exceptions:
-          - java.lang.RuntimeException
+          - com.picpay.vendas.exception.ErroAoConectarComMs
 
 logging:
   level:

@@ -17,7 +17,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
 import static io.swagger.v3.oas.annotations.enums.ParameterIn.PATH;
 
@@ -36,18 +35,16 @@ public interface OpenApiController {
     List<Venda> listarVendas();
 
 
-
     @Operation(summary = "Procurar venda por ID")
-    @Parameter(name = "id", in = PATH, required = true, description = "Procura o venda com base no identificador")
+    @Parameter(name = "id", in = PATH, required = true, description = "Procura a venda com base no identificador")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Venda encontrada",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                             schema = @Schema(implementation = Venda.class))),
             @ApiResponse(responseCode = "404", description = "Venda não encontrada")
     })
-    Optional<Venda> procurarVendaPorId(@PathVariable Long id);
-
-
+    @GetMapping(value = "/procurar/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<Venda> procurarVendaPorId(@PathVariable String id);
 
 
     @Operation(summary = "Registrar venda")
@@ -66,15 +63,14 @@ public interface OpenApiController {
                     content = @Content(schema = @Schema(implementation = Venda.class)))
             @org.springframework.web.bind.annotation.RequestBody Venda venda);
 
-    @Operation(summary = "deletar uma venda")
+    @Operation(summary = "Deletar uma venda")
     @Parameter(name = "id", in = PATH, required = true, description = "Deleta o registro da venda com base no identificador")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Venda deletado",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
-                            schema = @Schema(implementation = Venda.class))),
-            @ApiResponse(responseCode = "404", description = "Venda não encontrado")
+            @ApiResponse(responseCode = "200", description = "Venda deletada"),
+            @ApiResponse(responseCode = "404", description = "Venda não encontrada")
     })
-    ResponseEntity<String> deletarVenda(@PathVariable Long id);
+    @DeleteMapping(value = "/deletar/{id}")
+    ResponseEntity<String> deletarVenda(@PathVariable String id);
 
     @Operation(summary = "Atualizar venda")
     @ApiResponses({

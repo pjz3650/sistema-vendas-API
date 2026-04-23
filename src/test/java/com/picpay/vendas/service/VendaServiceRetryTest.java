@@ -1,6 +1,7 @@
 package com.picpay.vendas.service;
 
 
+import com.picpay.vendas.exception.ErroAoConectarComMs;
 import com.picpay.vendas.model.Produto;
 import com.picpay.vendas.model.Venda;
 import com.picpay.vendas.repository.ProdutoClient;
@@ -17,7 +18,10 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
-@SpringBootTest
+@SpringBootTest(properties = {
+        "app.client-id=test-client",
+        "integrations.produto.api-version=v1"
+})
 class VendaServiceRetryTest {
 
     @Autowired
@@ -34,24 +38,24 @@ class VendaServiceRetryTest {
     void deveriaTestar5VezesECairNoFallback() {
 
         Venda obj = Venda.builder()
-                .id(1L)
+                .id("id-1")
                 .idProduto(List.of(1L))
                 .build();
 
         when(client.buscarProduto(anyLong()))
-                .thenThrow(new RuntimeException("API indisponível"));
+                .thenThrow(new ErroAoConectarComMs("API indisponível"));
 
-        assertThrows(RuntimeException.class, () -> service.adicionar(obj));
+        assertThrows(ErroAoConectarComMs.class, () -> service.adicionar(obj));
 
         verify(client, times(5)).buscarProduto(1L);
     }
 
     @Test
     @DisplayName("Deveria ter sucesso na segunda tentativa")
-    void deveriaSuccederNaSegundaTentativa() {
+    void deveriaTerSucessoNaSegundaTentativa() {
 
         Venda obj = Venda.builder()
-                .id(1L)
+                .id("id-1")
                 .idProduto(List.of(1L))
                 .build();
 
@@ -59,7 +63,7 @@ class VendaServiceRetryTest {
         produto.setPreco(10.0);
 
         when(client.buscarProduto(anyLong()))
-                .thenThrow(new RuntimeException("falhou"))
+                .thenThrow(new ErroAoConectarComMs("falhou"))
                 .thenReturn(produto);
 
         when(repository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
@@ -71,4 +75,3 @@ class VendaServiceRetryTest {
         verify(client, times(2)).buscarProduto(1L);
     }
 }
-

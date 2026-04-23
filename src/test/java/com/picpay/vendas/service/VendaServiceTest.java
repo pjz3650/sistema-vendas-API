@@ -11,6 +11,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DuplicateKeyException;
 
 import java.util.List;
 import java.util.Optional;
@@ -35,39 +36,33 @@ class VendaServiceTest {
     @DisplayName("Deveria retornar True ao chamar método deletar")
     void deveriaRetornarTrueAoChamarMetodoDeletar() {
 
-        Venda obj = mock(Venda.class);
+        when(repository.existsById("id-1")).thenReturn(true);
 
-        when(repository.existsById(obj.getId())).thenReturn(true);
+        boolean resultado = service.deletar("id-1");
 
-        boolean resultado = service.deletar(obj.getId());
-
-        verify(repository, times(1)).deleteById(obj.getId());
+        verify(repository, times(1)).deleteById("id-1");
         assertTrue(resultado);
-
     }
 
     @Test
     @DisplayName("Deveria retornar False ao chamar método deletar")
     void deveriaRetornarFalseAoChamarMetodoDeletar() {
 
-        Venda obj = Venda.builder()
-                .id(1L)
-                .build();
+        when(repository.existsById("id-1")).thenReturn(false);
 
-        when(repository.existsById(1L)).thenReturn(false);
-
-        boolean resultado = service.deletar(obj.getId());
+        boolean resultado = service.deletar("id-1");
 
         assertFalse(resultado);
-        verify(repository, never()).deleteById(1L);
-
+        verify(repository, never()).deleteById("id-1");
     }
 
     @Test
     @DisplayName("Deveria adicionar o objeto ao banco e retornar o mesmo")
     void deveriaAdicionarOObjetoAoBancoERetornarOMesmo() {
 
-        Venda obj = mock(Venda.class);
+        Venda obj = Venda.builder()
+                .idProduto(List.of())
+                .build();
 
         when(repository.save(obj)).thenReturn(obj);
 
@@ -78,8 +73,8 @@ class VendaServiceTest {
     }
 
     @Test
-    @DisplayName("Deveria retornar a soma dos preços dos produdos 1 e 2")
-    void deveriaRetornarASomaDosPreçosDosProdudos1E2() {
+    @DisplayName("Deveria retornar a soma dos preços dos produtos 1 e 2")
+    void deveriaRetornarASomaDosPreçosDosProdutos1E2() {
 
         List<Long> idsProdutos = List.of(1L, 2L);
 
@@ -103,32 +98,27 @@ class VendaServiceTest {
         verify(repository, times(1)).save(obj);
         verify(client, times(1)).buscarProduto(1L);
         verify(client, times(1)).buscarProduto(2L);
-
     }
 
     @Test
-    @DisplayName("Deveria retornar erro ao tentar adicionar uma venda")
-    void deveriaRetornarErroAoTentarAdicionarUmaVenda() {
+    @DisplayName("Deveria retornar erro ao tentar adicionar uma venda duplicada")
+    void deveriaRetornarErroAoTentarAdicionarUmaVendaDuplicada() {
 
-        Venda obj = mock(Venda.class);
+        Venda obj = Venda.builder()
+                .idProduto(List.of())
+                .build();
 
-        when(service.adicionar(obj)).thenThrow(new VendaJaExistenteException("Venda já existente"));
+        when(repository.save(any())).thenThrow(new DuplicateKeyException("duplicate"));
 
         assertThrows(VendaJaExistenteException.class, () -> service.adicionar(obj));
-
     }
 
     @Test
     @DisplayName("Deveria retornar todos os objetos da lista")
     void deveriaRetornarTodosOsObjetosDaLista() {
 
-        Venda v1 = Venda.builder()
-                .id(1L)
-                .build();
-
-        Venda v2 = Venda.builder()
-                .id(2L)
-                .build();
+        Venda v1 = Venda.builder().id("id-1").build();
+        Venda v2 = Venda.builder().id("id-2").build();
 
         List<Venda> vendas = List.of(v1, v2);
 
@@ -158,33 +148,26 @@ class VendaServiceTest {
     @DisplayName("Deveria retornar o objeto")
     void deveriaRetornarOObjeto() {
 
-        Venda venda = Venda.builder()
-                .id(1L)
-                .build();
+        Venda venda = Venda.builder().id("id-1").build();
 
+        when(repository.findById("id-1")).thenReturn(Optional.of(venda));
 
-        when(repository.findById(anyLong())).thenReturn(Optional.of(venda));
+        Optional<Venda> vendaResultado = service.buscar("id-1");
 
-        Optional<Venda> vendaResultado = service.buscar(venda.getId());
-
-        boolean validacao = vendaResultado.isPresent();
-
-        verify(repository, times(1)).findById(venda.getId());
-        assertTrue(validacao);
-
+        assertTrue(vendaResultado.isPresent());
+        verify(repository, times(1)).findById("id-1");
     }
 
     @Test
     @DisplayName("Deveria retornar um objeto vazio")
     void deveriaRetornarUmObjetoVazio() {
 
-        when(repository.findById(2L)).thenReturn(Optional.empty());
+        when(repository.findById("id-2")).thenReturn(Optional.empty());
 
-        Optional<Venda> vendaResultado = service.buscar(2L);
+        Optional<Venda> vendaResultado = service.buscar("id-2");
 
-        verify(repository, times(1)).findById(2L);
+        verify(repository, times(1)).findById("id-2");
         assertTrue(vendaResultado.isEmpty());
-
     }
 
     @Test
@@ -192,20 +175,20 @@ class VendaServiceTest {
     void deveAlterarOObjetoERetornarOMesmo() {
 
         Venda objUpd = Venda.builder()
-                .id(1L)
+                .id("id-1")
                 .idProduto(List.of(1L, 2L))
                 .build();
 
         Produto produto = new Produto();
         produto.setPreco(10.0);
 
-        when(repository.findById(anyLong())).thenReturn(Optional.of(objUpd));
+        when(repository.findById("id-1")).thenReturn(Optional.of(objUpd));
         when(client.buscarProduto(anyLong())).thenReturn(produto);
         when(repository.save(any())).thenReturn(objUpd);
 
         Venda objRetorno = service.atualizar(objUpd);
 
-        verify(repository, times(1)).findById(1L);
+        verify(repository, times(1)).findById("id-1");
         verify(repository, times(1)).save(objUpd);
         verify(client, times(1)).buscarProduto(1L);
         verify(client, times(1)).buscarProduto(2L);
@@ -213,20 +196,19 @@ class VendaServiceTest {
     }
 
     @Test
-    @DisplayName("Deve retornar um erro")
-    void deveRetornarUmErro() {
+    @DisplayName("Deve retornar um erro ao tentar atualizar venda inexistente")
+    void deveRetornarUmErroAoTentarAtualizarVendaInexistente() {
 
         Venda objUpd = Venda.builder()
-                .id(2L)
+                .id("id-99")
                 .idProduto(List.of(1L))
                 .build();
 
-        when(repository.findById(anyLong())).thenReturn(Optional.empty());
+        when(repository.findById("id-99")).thenReturn(Optional.empty());
 
         assertThrows(RuntimeException.class, () -> service.atualizar(objUpd));
 
-        verify(repository, times(1)).findById(2L);
+        verify(repository, times(1)).findById("id-99");
         verify(repository, never()).save(any());
     }
 }
-

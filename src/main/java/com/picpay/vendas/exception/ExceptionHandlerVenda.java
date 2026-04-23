@@ -10,8 +10,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 @Slf4j
 public class ExceptionHandlerVenda {
 
-    @ExceptionHandler(ConflitoVendaException.class)
-    ResponseEntity<String> erroAoConectarMicrosservico(ConflitoVendaException e) {
+    @ExceptionHandler(ErroAoConectarComMs.class)
+    ResponseEntity<String> erroAoConectarMicrosservico(ErroAoConectarComMs e) {
         log.warn("Falha ao conectar com microsserviço: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
                     .body(e.getMessage());
@@ -25,9 +25,9 @@ public class ExceptionHandlerVenda {
     }
 
     @ExceptionHandler(RuntimeException.class)
-    ResponseEntity<String> produtoNaoEncontradoHandler(RuntimeException e) {
-        log.warn("Venda não encontrada: {}", e.getMessage());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+    ResponseEntity<String> runtimeExceptionHandler(RuntimeException e) {
+        log.error("Erro interno não tratado: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(e.getMessage());
     }
 

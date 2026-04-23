@@ -2,45 +2,48 @@ package com.picpay.vendas.controller;
 
 import com.picpay.vendas.model.Venda;
 import com.picpay.vendas.service.VendaService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 public class VendaController implements OpenApiController {
-    @Autowired
-    private VendaService service;
 
-    @GetMapping("/listar")
+    private final VendaService service;
+
+    public VendaController(VendaService service) {
+        this.service = service;
+    }
+
+    @Override
     public List<Venda> listarVendas() {
         return service.listar();
     }
 
-    @GetMapping("/procurar/{id}")
-    public Optional<Venda> procurarVendaPorId(@PathVariable Long id) {
-        return service.buscar(id);
+    @Override
+    public ResponseEntity<Venda> procurarVendaPorId(@PathVariable String id) {
+        return service.buscar(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
-    @PostMapping("/adicionar")
+    @Override
     public ResponseEntity<String> adicionarVenda(@RequestBody Venda venda) {
-            service.adicionar(venda);
-            return ResponseEntity.status(HttpStatus.CREATED).body("Venda cadastrada com sucesso!!!");
-        }
+        service.adicionar(venda);
+        return ResponseEntity.status(HttpStatus.CREATED).body("Venda cadastrada com sucesso!");
+    }
 
-    @PutMapping("/atualizar")
+    @Override
     public ResponseEntity<Object> atualizarVenda(@RequestBody Venda venda) {
-            return ResponseEntity.ok(service.atualizar(venda));
+        return ResponseEntity.ok(service.atualizar(venda));
+    }
 
-        }
-
-    @DeleteMapping("/deletar/{id}")
-    public ResponseEntity<String> deletarVenda(@PathVariable Long id) {
+    @Override
+    public ResponseEntity<String> deletarVenda(@PathVariable String id) {
         if (service.deletar(id)) {
-            return ResponseEntity.ok("Produto deletado!!");
+            return ResponseEntity.ok("Venda deletada!");
         }
         return ResponseEntity.notFound().build();
     }
