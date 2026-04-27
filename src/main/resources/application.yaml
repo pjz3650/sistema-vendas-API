@@ -1,0 +1,52 @@
+server:
+  port: 8081
+
+spring:
+  config:
+    import: optional:file:.env[.properties]
+  data:
+    mongodb:
+      uri: ${URI}
+  application:
+    name: vendas
+    version: 1.0.0
+  cloud:
+    openfeign:
+      client:
+        config:
+          default:
+            level: FULL
+            connectTimeout: 2000
+            readTimeout: 5000
+            loggerLevel: basic
+          produtoClient:
+            loggerLevel: full
+            connectTimeout: 1000
+            readTimeout: 3000
+
+app:
+  client-id: vendas-service
+
+integrations:
+  produto:
+    api-version: v1
+
+springdoc:
+  swagger-ui:
+    path: /swagger
+  api-docs:
+    path: /openapi
+
+resilience4j:
+  retry:
+    instances:
+      adicionarVendaRetry:
+        maxAttempts: 5
+        waitDuration: 100
+        retry-exceptions:
+          - com.picpay.vendas.exception.ErroAoConectarComMs
+
+logging:
+  level:
+    com.picpay.vendas: DEBUG
+    feign: DEBUG

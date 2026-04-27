@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  mongo:
+    image: mongo:7.0
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: adm
+      MONGO_INITDB_ROOT_PASSWORD: adm123
+      MONGO_INITDB_DATABASE: sistema_produtos
+    ports:
+      - "27017:27017"
+
+  app:
+    build: .
+    env_file:
+      - .env
+    ports:
+      - "8081:8081"
+    depends_on:
+      - mongo
+    environment:
+      URI: mongodb://adm:adm123@mongo:27017/sistema_produtos?authSource=admin
