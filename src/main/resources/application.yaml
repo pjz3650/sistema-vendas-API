@@ -44,7 +44,7 @@ resilience4j:
         maxAttempts: 5
         waitDuration: 100
         retry-exceptions:
-          - com.picpay.vendas.exception.ErroAoConectarComMs
+          - com.picpay.vendas.exception.ErroAoConectarComMsException
 
 logging:
   level:

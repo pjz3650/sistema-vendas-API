@@ -10,17 +10,31 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 @Slf4j
 public class ExceptionHandlerVenda {
 
-    @ExceptionHandler(ErroAoConectarComMs.class)
-    ResponseEntity<String> erroAoConectarMicrosservico(ErroAoConectarComMs e) {
+    @ExceptionHandler(ErroAoConectarComMsException.class)
+    ResponseEntity<String> erroAoConectarMicrosservico(ErroAoConectarComMsException e) {
         log.warn("Falha ao conectar com microsserviço: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
                     .body(e.getMessage());
     }
 
     @ExceptionHandler(VendaJaExistenteException.class)
-    ResponseEntity<String>  conflitoAoInserirHandler(VendaJaExistenteException e) {
+    ResponseEntity<String> conflitoAoInserirHandler(VendaJaExistenteException e) {
         log.warn("Falha adicionar venda: {}", e.getMessage());
         return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(e.getMessage());
+    }
+
+    @ExceptionHandler(VendaNaoEncontradaException.class)
+    ResponseEntity<String> vendaNaoEncontradaHandler(VendaNaoEncontradaException e) {
+        log.warn("Venda não encontrada: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(e.getMessage());
+    }
+
+    @ExceptionHandler(TipoPagamentoInvalidoException.class)
+    ResponseEntity<String> tipoPagamentoInvalidoHandler(TipoPagamentoInvalidoException e) {
+        log.warn("Tipo de pagamento inválido: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
                 .body(e.getMessage());
     }
 

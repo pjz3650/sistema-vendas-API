@@ -18,10 +18,9 @@ public class Venda {
     private String id;
     private List<Long> idProduto;
     private Cliente cliente;
-
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Double valorCompra;
-
+    private TipoPagamento tipoPagamento;
 
 
     @Data

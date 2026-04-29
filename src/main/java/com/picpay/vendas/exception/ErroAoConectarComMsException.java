@@ -1,8 +1,8 @@
 package com.picpay.vendas.exception;
 
 
-public class ErroAoConectarComMs extends RuntimeException {
-    public ErroAoConectarComMs(String message) {
+public class ErroAoConectarComMsException extends RuntimeException {
+    public ErroAoConectarComMsException(String message) {
         super(message);
     }
 
