@@ -1,5 +1,11 @@
 package com.picpay.vendas.model;
 
 
-public interface Desconto {
+import java.math.BigDecimal;
+
+public interface CalculoDesconto {
+
+    BigDecimal calcularDesconto(BigDecimal valor);
+
+    TipoPagamento getTipoPagamento();
 }

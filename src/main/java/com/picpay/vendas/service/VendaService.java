@@ -4,16 +4,14 @@ import com.picpay.vendas.exception.ErroAoConectarComMsException;
 import com.picpay.vendas.exception.TipoPagamentoInvalidoException;
 import com.picpay.vendas.exception.VendaJaExistenteException;
 import com.picpay.vendas.exception.VendaNaoEncontradaException;
-import com.picpay.vendas.model.Produto;
-import com.picpay.vendas.model.TipoPagamento;
-import com.picpay.vendas.model.Venda;
+import com.picpay.vendas.model.*;
 import com.picpay.vendas.repository.ProdutoClient;
 import com.picpay.vendas.repository.VendaRepository;
 import io.github.resilience4j.retry.annotation.Retry;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
-
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -23,33 +21,36 @@ public class VendaService {
 
     private final VendaRepository repository;
 
+    private final Fabrica fabrica;
+
+
     private final ProdutoClient client;
 
 
-    public VendaService(VendaRepository vendaRepository, ProdutoClient produtoClient) {
+    public VendaService(VendaRepository vendaRepository, ProdutoClient produtoClient, Fabrica fabrica) {
         this.repository = vendaRepository;
         this.client = produtoClient;
+        this.fabrica = fabrica;
     }
 
     @Retry(name = "adicionarVendaRetry", fallbackMethod = "adicionarFallback")
     public Venda adicionar(Venda venda) {
 
         if (venda.getTipoPagamento() == null) {
-            throw new TipoPagamentoInvalidoException("Tipo de pagamento é obrigatório");
+             throw new TipoPagamentoInvalidoException("Tipo de pagamento é obrigatório");
         }
 
-
-        double valorTotal = venda.getIdProduto().stream()
+        BigDecimal valorTotal = venda.getIdProduto().stream()
                 .map(client::buscarProduto)
-                .mapToDouble(Produto::getPreco)
-                .sum();
+                .map(Produto::getPreco)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        switch (venda.getTipoPagamento()) {
-            case PIX -> valorTotal = valorTotal * 0.90;
-            case CARTAO_DEBITO -> valorTotal = valorTotal * 0.95;
-        }
 
-        venda.setValorCompra(valorTotal);
+        var implementacao = fabrica.devolverImplementacao(venda.getTipoPagamento());
+
+        BigDecimal valorFinal = implementacao.calcularDesconto(valorTotal);
+
+        venda.setValorCompra(valorFinal);
 
         try {
             return repository.save(venda);

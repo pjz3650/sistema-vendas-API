@@ -6,6 +6,7 @@ import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 
@@ -19,7 +20,7 @@ public class Venda {
     private List<Long> idProduto;
     private Cliente cliente;
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
-    private Double valorCompra;
+    private BigDecimal valorCompra;
     private TipoPagamento tipoPagamento;
 
 
@@ -30,7 +31,7 @@ public class Venda {
         private String id;
         private String nome;
         private String sobrenome;
-        private Double credito;
+        private BigDecimal credito;
     }
 
 }

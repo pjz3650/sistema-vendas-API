@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -62,7 +63,7 @@ class VendaServiceRetryTest {
                 .build();
 
         Produto produto = new Produto();
-        produto.setPreco(100.0);
+        produto.setPreco(BigDecimal.valueOf(100.0));
 
         when(client.buscarProduto(anyLong()))
                 .thenThrow(new ErroAoConectarComMsException("falhou"))
@@ -73,7 +74,7 @@ class VendaServiceRetryTest {
         Venda resultado = service.adicionar(venda);
 
         assertNotNull(resultado);
-        assertEquals(90.0, resultado.getValorCompra());
+        assertEquals(0, BigDecimal.valueOf(90.0).compareTo(resultado.getValorCompra()));
         verify(client, times(2)).buscarProduto(1L);
     }
 }

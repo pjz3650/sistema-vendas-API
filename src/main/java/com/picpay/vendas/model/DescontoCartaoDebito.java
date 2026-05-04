@@ -6,11 +6,11 @@ import org.springframework.stereotype.Component;
 import java.math.BigDecimal;
 
 @Component
-@Qualifier("descontoCartao")
-public class DescontoCartao implements CalculoDesconto {
+@Qualifier("descontoDebito")
+public class DescontoCartaoDebito implements CalculoDesconto {
 
     public TipoPagamento getTipoPagamento() {
-        return TipoPagamento.CARTAO_CREDITO;
+        return TipoPagamento.CARTAO_DEBITO;
     }
 
     public BigDecimal calcularDesconto(BigDecimal valor) {

@@ -1,10 +1,15 @@
 package com.picpay.vendas.exception;
 
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import com.picpay.vendas.model.TipoPagamento;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+
+import java.util.Arrays;
 
 @ControllerAdvice
 @Slf4j
@@ -45,8 +50,18 @@ public class ExceptionHandlerVenda {
                 .body(e.getMessage());
     }
 
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    ResponseEntity<String> httpMessageNotReadableHandler(HttpMessageNotReadableException e) {
+        Throwable cause = e.getCause();
+        if (cause instanceof InvalidFormatException ife
+                && ife.getTargetType() != null
+                && ife.getTargetType().isEnum()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Tipo de pagamento inválido. Valores aceitos: " +
+                            Arrays.toString(TipoPagamento.values()));
+        }
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Requisição inválida");
 
-
-
+    }
 
 }

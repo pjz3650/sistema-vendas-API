@@ -3,9 +3,12 @@ package com.picpay.vendas.service;
 import com.picpay.vendas.exception.TipoPagamentoInvalidoException;
 import com.picpay.vendas.exception.VendaJaExistenteException;
 import com.picpay.vendas.exception.VendaNaoEncontradaException;
+import com.picpay.vendas.model.CalculoDesconto;
+import com.picpay.vendas.model.Fabrica;
 import com.picpay.vendas.model.Produto;
 import com.picpay.vendas.model.TipoPagamento;
 import com.picpay.vendas.model.Venda;
+import java.math.BigDecimal;
 import com.picpay.vendas.repository.ProdutoClient;
 import com.picpay.vendas.repository.VendaRepository;
 import org.junit.jupiter.api.DisplayName;
@@ -31,6 +34,9 @@ class VendaServiceTest {
 
     @Mock
     private ProdutoClient client;
+
+    @Mock
+    private Fabrica fabrica;
 
     @InjectMocks
     private VendaService service;
@@ -61,19 +67,22 @@ class VendaServiceTest {
     @DisplayName("Deveria adicionar venda com PIX e aplicar desconto de 10%")
     void deveriaAdicionarVendaComPixEAplicarDesconto() {
         Produto produto = new Produto();
-        produto.setPreco(100.0);
+        produto.setPreco(BigDecimal.valueOf(100.0));
 
         Venda venda = Venda.builder()
                 .idProduto(List.of(1L))
                 .tipoPagamento(TipoPagamento.PIX)
                 .build();
 
+        CalculoDesconto descontoPix = mock(CalculoDesconto.class);
+        when(descontoPix.calcularDesconto(any())).thenReturn(BigDecimal.valueOf(90.0));
+        when(fabrica.devolverImplementacao(TipoPagamento.PIX)).thenReturn(descontoPix);
         when(client.buscarProduto(1L)).thenReturn(produto);
         when(repository.save(venda)).thenReturn(venda);
 
         Venda resultado = service.adicionar(venda);
 
-        assertEquals(90.0, resultado.getValorCompra());
+        assertEquals(0, BigDecimal.valueOf(90.0).compareTo(resultado.getValorCompra()));
         verify(repository, times(1)).save(venda);
     }
 
@@ -81,19 +90,22 @@ class VendaServiceTest {
     @DisplayName("Deveria adicionar venda com CARTAO_DEBITO e aplicar desconto de 5%")
     void deveriaAdicionarVendaComCartaoDebitoEAplicarDesconto() {
         Produto produto = new Produto();
-        produto.setPreco(100.0);
+        produto.setPreco(BigDecimal.valueOf(100.0));
 
         Venda venda = Venda.builder()
                 .idProduto(List.of(1L))
                 .tipoPagamento(TipoPagamento.CARTAO_DEBITO)
                 .build();
 
+        CalculoDesconto descontoDebito = mock(CalculoDesconto.class);
+        when(descontoDebito.calcularDesconto(any())).thenReturn(BigDecimal.valueOf(95.0));
+        when(fabrica.devolverImplementacao(TipoPagamento.CARTAO_DEBITO)).thenReturn(descontoDebito);
         when(client.buscarProduto(1L)).thenReturn(produto);
         when(repository.save(venda)).thenReturn(venda);
 
         Venda resultado = service.adicionar(venda);
 
-        assertEquals(95.0, resultado.getValorCompra());
+        assertEquals(0, BigDecimal.valueOf(95.0).compareTo(resultado.getValorCompra()));
         verify(repository, times(1)).save(venda);
     }
 
@@ -101,19 +113,22 @@ class VendaServiceTest {
     @DisplayName("Deveria adicionar venda com CARTAO_CREDITO sem desconto")
     void deveriaAdicionarVendaComCartaoCreditoSemDesconto() {
         Produto produto = new Produto();
-        produto.setPreco(100.0);
+        produto.setPreco(BigDecimal.valueOf(100.0));
 
         Venda venda = Venda.builder()
                 .idProduto(List.of(1L))
-                .tipoPagamento(TipoPagamento.CARTAO_CRADITO)
+                .tipoPagamento(TipoPagamento.CARTAO_CREDITO)
                 .build();
 
+        CalculoDesconto descontoCredito = mock(CalculoDesconto.class);
+        when(descontoCredito.calcularDesconto(any())).thenReturn(BigDecimal.valueOf(100.0));
+        when(fabrica.devolverImplementacao(TipoPagamento.CARTAO_CREDITO)).thenReturn(descontoCredito);
         when(client.buscarProduto(1L)).thenReturn(produto);
         when(repository.save(venda)).thenReturn(venda);
 
         Venda resultado = service.adicionar(venda);
 
-        assertEquals(100.0, resultado.getValorCompra());
+        assertEquals(0, BigDecimal.valueOf(100.0).compareTo(resultado.getValorCompra()));
         verify(repository, times(1)).save(venda);
     }
 
@@ -121,19 +136,22 @@ class VendaServiceTest {
     @DisplayName("Deveria retornar a soma dos preços dos produtos 1 e 2 com PIX")
     void deveriaRetornarASomaDosPrecosDosProudutosCom2ItensPix() {
         Produto produto = new Produto();
-        produto.setPreco(10.0);
+        produto.setPreco(BigDecimal.valueOf(10.0));
 
         Venda venda = Venda.builder()
                 .idProduto(List.of(1L, 2L))
                 .tipoPagamento(TipoPagamento.PIX)
                 .build();
 
+        CalculoDesconto descontoPix = mock(CalculoDesconto.class);
+        when(descontoPix.calcularDesconto(any())).thenReturn(BigDecimal.valueOf(18.0));
+        when(fabrica.devolverImplementacao(TipoPagamento.PIX)).thenReturn(descontoPix);
         when(client.buscarProduto(anyLong())).thenReturn(produto);
         when(repository.save(venda)).thenReturn(venda);
 
         Venda resultado = service.adicionar(venda);
 
-        assertEquals(18.0, resultado.getValorCompra());
+        assertEquals(0, BigDecimal.valueOf(18.0).compareTo(resultado.getValorCompra()));
         verify(client, times(1)).buscarProduto(1L);
         verify(client, times(1)).buscarProduto(2L);
     }
@@ -160,6 +178,9 @@ class VendaServiceTest {
                 .tipoPagamento(TipoPagamento.PIX)
                 .build();
 
+        CalculoDesconto descontoPix = mock(CalculoDesconto.class);
+        when(descontoPix.calcularDesconto(any())).thenReturn(BigDecimal.ZERO);
+        when(fabrica.devolverImplementacao(TipoPagamento.PIX)).thenReturn(descontoPix);
         when(repository.save(any())).thenThrow(new DuplicateKeyException("duplicate"));
 
         assertThrows(VendaJaExistenteException.class, () -> service.adicionar(venda));
@@ -227,15 +248,18 @@ class VendaServiceTest {
                 .build();
 
         Produto produto = new Produto();
-        produto.setPreco(10.0);
+        produto.setPreco(BigDecimal.valueOf(10.0));
 
+        CalculoDesconto descontoPix = mock(CalculoDesconto.class);
+        when(descontoPix.calcularDesconto(any())).thenReturn(BigDecimal.valueOf(18.0));
+        when(fabrica.devolverImplementacao(TipoPagamento.PIX)).thenReturn(descontoPix);
         when(repository.findById("id-1")).thenReturn(Optional.of(vendaExistente));
         when(client.buscarProduto(anyLong())).thenReturn(produto);
         when(repository.save(any())).thenReturn(vendaExistente);
 
         Venda resultado = service.atualizar(vendaExistente);
 
-        assertEquals(18.0, resultado.getValorCompra());
+        assertEquals(0, BigDecimal.valueOf(18.0).compareTo(resultado.getValorCompra()));
         verify(repository, times(1)).findById("id-1");
         verify(repository, times(1)).save(vendaExistente);
     }
