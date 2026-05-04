@@ -1,8 +1,11 @@
 package com.picpay.vendas.service;
 
-import com.picpay.vendas.exception.ErroAoConectarComMs;
+import com.picpay.vendas.exception.ErroAoConectarComMsException;
+import com.picpay.vendas.exception.TipoPagamentoInvalidoException;
 import com.picpay.vendas.exception.VendaJaExistenteException;
+import com.picpay.vendas.exception.VendaNaoEncontradaException;
 import com.picpay.vendas.model.Produto;
+import com.picpay.vendas.model.TipoPagamento;
 import com.picpay.vendas.model.Venda;
 import com.picpay.vendas.repository.ProdutoClient;
 import com.picpay.vendas.repository.VendaRepository;
@@ -31,10 +34,20 @@ public class VendaService {
     @Retry(name = "adicionarVendaRetry", fallbackMethod = "adicionarFallback")
     public Venda adicionar(Venda venda) {
 
+        if (venda.getTipoPagamento() == null) {
+            throw new TipoPagamentoInvalidoException("Tipo de pagamento é obrigatório");
+        }
+
+
         double valorTotal = venda.getIdProduto().stream()
                 .map(client::buscarProduto)
                 .mapToDouble(Produto::getPreco)
                 .sum();
+
+        switch (venda.getTipoPagamento()) {
+            case PIX -> valorTotal = valorTotal * 0.90;
+            case CARTAO_DEBITO -> valorTotal = valorTotal * 0.95;
+        }
 
         venda.setValorCompra(valorTotal);
 
@@ -69,24 +82,15 @@ public class VendaService {
                     existente.setCliente(venda.getCliente());
                     existente.setIdProduto(venda.getIdProduto());
 
-                    double valorTotal = existente.getIdProduto().stream()
-                            .map(client::buscarProduto)
-                            .mapToDouble(Produto::getPreco)
-                            .sum();
-
-                    existente.setValorCompra(valorTotal);
-
-                    return repository.save(existente);
+                    return adicionar(existente);
                 })
                 .orElseThrow(() -> {
-                    log.warn("Venda não encontrada para atualização - id: {}", venda.getId());
-                    return new RuntimeException("Venda não encontrada");
+                    return new VendaNaoEncontradaException("Venda não encontrada");
                 });
     }
 
     public Venda adicionarFallback(Venda input, Exception e) {
-        log.error("Serviço indisponível - causa: {}", e.getMessage());
-        throw new ErroAoConectarComMs("Serviço de produtos indisponível");
+        throw new ErroAoConectarComMsException("Serviço de produtos indisponível");
     }
 
 }

@@ -1,7 +1,10 @@
 package com.picpay.vendas.service;
 
+import com.picpay.vendas.exception.TipoPagamentoInvalidoException;
 import com.picpay.vendas.exception.VendaJaExistenteException;
+import com.picpay.vendas.exception.VendaNaoEncontradaException;
 import com.picpay.vendas.model.Produto;
+import com.picpay.vendas.model.TipoPagamento;
 import com.picpay.vendas.model.Venda;
 import com.picpay.vendas.repository.ProdutoClient;
 import com.picpay.vendas.repository.VendaRepository;
@@ -35,7 +38,6 @@ class VendaServiceTest {
     @Test
     @DisplayName("Deveria retornar True ao chamar método deletar")
     void deveriaRetornarTrueAoChamarMetodoDeletar() {
-
         when(repository.existsById("id-1")).thenReturn(true);
 
         boolean resultado = service.deletar("id-1");
@@ -47,7 +49,6 @@ class VendaServiceTest {
     @Test
     @DisplayName("Deveria retornar False ao chamar método deletar")
     void deveriaRetornarFalseAoChamarMetodoDeletar() {
-
         when(repository.existsById("id-1")).thenReturn(false);
 
         boolean resultado = service.deletar("id-1");
@@ -57,83 +58,131 @@ class VendaServiceTest {
     }
 
     @Test
-    @DisplayName("Deveria adicionar o objeto ao banco e retornar o mesmo")
-    void deveriaAdicionarOObjetoAoBancoERetornarOMesmo() {
+    @DisplayName("Deveria adicionar venda com PIX e aplicar desconto de 10%")
+    void deveriaAdicionarVendaComPixEAplicarDesconto() {
+        Produto produto = new Produto();
+        produto.setPreco(100.0);
 
-        Venda obj = Venda.builder()
-                .idProduto(List.of())
+        Venda venda = Venda.builder()
+                .idProduto(List.of(1L))
+                .tipoPagamento(TipoPagamento.PIX)
                 .build();
 
-        when(repository.save(obj)).thenReturn(obj);
+        when(client.buscarProduto(1L)).thenReturn(produto);
+        when(repository.save(venda)).thenReturn(venda);
 
-        Venda objRetorno = service.adicionar(obj);
+        Venda resultado = service.adicionar(venda);
 
-        assertNotNull(objRetorno);
-        verify(repository, times(1)).save(obj);
+        assertEquals(90.0, resultado.getValorCompra());
+        verify(repository, times(1)).save(venda);
     }
 
     @Test
-    @DisplayName("Deveria retornar a soma dos preços dos produtos 1 e 2")
-    void deveriaRetornarASomaDosPreçosDosProdutos1E2() {
+    @DisplayName("Deveria adicionar venda com CARTAO_DEBITO e aplicar desconto de 5%")
+    void deveriaAdicionarVendaComCartaoDebitoEAplicarDesconto() {
+        Produto produto = new Produto();
+        produto.setPreco(100.0);
 
-        List<Long> idsProdutos = List.of(1L, 2L);
-
-        Venda obj = Venda.builder()
-                .idProduto(idsProdutos)
+        Venda venda = Venda.builder()
+                .idProduto(List.of(1L))
+                .tipoPagamento(TipoPagamento.CARTAO_DEBITO)
                 .build();
 
+        when(client.buscarProduto(1L)).thenReturn(produto);
+        when(repository.save(venda)).thenReturn(venda);
+
+        Venda resultado = service.adicionar(venda);
+
+        assertEquals(95.0, resultado.getValorCompra());
+        verify(repository, times(1)).save(venda);
+    }
+
+    @Test
+    @DisplayName("Deveria adicionar venda com CARTAO_CREDITO sem desconto")
+    void deveriaAdicionarVendaComCartaoCreditoSemDesconto() {
+        Produto produto = new Produto();
+        produto.setPreco(100.0);
+
+        Venda venda = Venda.builder()
+                .idProduto(List.of(1L))
+                .tipoPagamento(TipoPagamento.CARTAO_CRADITO)
+                .build();
+
+        when(client.buscarProduto(1L)).thenReturn(produto);
+        when(repository.save(venda)).thenReturn(venda);
+
+        Venda resultado = service.adicionar(venda);
+
+        assertEquals(100.0, resultado.getValorCompra());
+        verify(repository, times(1)).save(venda);
+    }
+
+    @Test
+    @DisplayName("Deveria retornar a soma dos preços dos produtos 1 e 2 com PIX")
+    void deveriaRetornarASomaDosPrecosDosProudutosCom2ItensPix() {
         Produto produto = new Produto();
         produto.setPreco(10.0);
 
+        Venda venda = Venda.builder()
+                .idProduto(List.of(1L, 2L))
+                .tipoPagamento(TipoPagamento.PIX)
+                .build();
+
         when(client.buscarProduto(anyLong())).thenReturn(produto);
-        when(repository.save(obj)).thenReturn(obj);
+        when(repository.save(venda)).thenReturn(venda);
 
-        Venda objRetorno = service.adicionar(obj);
+        Venda resultado = service.adicionar(venda);
 
-        double valorVenda = objRetorno.getValorCompra();
-
-        double valorCorreto = 10.0 + 10.0;
-
-        assertEquals(valorCorreto, valorVenda);
-        verify(repository, times(1)).save(obj);
+        assertEquals(18.0, resultado.getValorCompra());
         verify(client, times(1)).buscarProduto(1L);
         verify(client, times(1)).buscarProduto(2L);
     }
 
     @Test
-    @DisplayName("Deveria retornar erro ao tentar adicionar uma venda duplicada")
-    void deveriaRetornarErroAoTentarAdicionarUmaVendaDuplicada() {
+    @DisplayName("Deveria lançar TipoPagamentoInvalidoException quando tipoPagamento for null")
+    void deveriaLancarExcecaoQuandoTipoPagamentoForNull() {
+        Venda venda = Venda.builder()
+                .idProduto(List.of(1L))
+                .tipoPagamento(null)
+                .build();
 
-        Venda obj = Venda.builder()
+        assertThrows(TipoPagamentoInvalidoException.class, () -> service.adicionar(venda));
+
+        verify(repository, never()).save(any());
+        verify(client, never()).buscarProduto(anyLong());
+    }
+
+    @Test
+    @DisplayName("Deveria lançar VendaJaExistenteException ao tentar adicionar venda duplicada")
+    void deveriaLancarExcecaoAoAdicionarVendaDuplicada() {
+        Venda venda = Venda.builder()
                 .idProduto(List.of())
+                .tipoPagamento(TipoPagamento.PIX)
                 .build();
 
         when(repository.save(any())).thenThrow(new DuplicateKeyException("duplicate"));
 
-        assertThrows(VendaJaExistenteException.class, () -> service.adicionar(obj));
+        assertThrows(VendaJaExistenteException.class, () -> service.adicionar(venda));
     }
 
     @Test
     @DisplayName("Deveria retornar todos os objetos da lista")
     void deveriaRetornarTodosOsObjetosDaLista() {
-
         Venda v1 = Venda.builder().id("id-1").build();
         Venda v2 = Venda.builder().id("id-2").build();
-
         List<Venda> vendas = List.of(v1, v2);
 
         when(repository.findAll()).thenReturn(vendas);
 
-        List<Venda> vendasResultado = service.listar();
+        List<Venda> resultado = service.listar();
 
         verify(repository, times(1)).findAll();
-        assertSame(vendas, vendasResultado);
+        assertSame(vendas, resultado);
     }
 
     @Test
     @DisplayName("Deveria retornar uma lista vazia")
     void deveriaRetornarUmaListaVazia() {
-
         List<Venda> vendas = List.of();
 
         when(repository.findAll()).thenReturn(vendas);
@@ -145,70 +194,81 @@ class VendaServiceTest {
     }
 
     @Test
-    @DisplayName("Deveria retornar o objeto")
+    @DisplayName("Deveria retornar o objeto ao buscar por id existente")
     void deveriaRetornarOObjeto() {
-
         Venda venda = Venda.builder().id("id-1").build();
 
         when(repository.findById("id-1")).thenReturn(Optional.of(venda));
 
-        Optional<Venda> vendaResultado = service.buscar("id-1");
+        Optional<Venda> resultado = service.buscar("id-1");
 
-        assertTrue(vendaResultado.isPresent());
+        assertTrue(resultado.isPresent());
         verify(repository, times(1)).findById("id-1");
     }
 
     @Test
-    @DisplayName("Deveria retornar um objeto vazio")
-    void deveriaRetornarUmObjetoVazio() {
+    @DisplayName("Deveria retornar Optional vazio ao buscar id inexistente")
+    void deveriaRetornarOptionalVazioAoBuscarIdInexistente() {
+        when(repository.findById("id-99")).thenReturn(Optional.empty());
 
-        when(repository.findById("id-2")).thenReturn(Optional.empty());
+        Optional<Venda> resultado = service.buscar("id-99");
 
-        Optional<Venda> vendaResultado = service.buscar("id-2");
-
-        verify(repository, times(1)).findById("id-2");
-        assertTrue(vendaResultado.isEmpty());
+        assertTrue(resultado.isEmpty());
+        verify(repository, times(1)).findById("id-99");
     }
 
     @Test
-    @DisplayName("Deve alterar o objeto e retornar com valorCompra calculado")
-    void deveAlterarOObjetoERetornarOMesmo() {
-
-        Venda objUpd = Venda.builder()
+    @DisplayName("Deve atualizar venda com PIX e recalcular valorCompra com desconto")
+    void deveAtualizarVendaComPixERecalcularValor() {
+        Venda vendaExistente = Venda.builder()
                 .id("id-1")
                 .idProduto(List.of(1L, 2L))
+                .tipoPagamento(TipoPagamento.PIX)
                 .build();
 
         Produto produto = new Produto();
         produto.setPreco(10.0);
 
-        when(repository.findById("id-1")).thenReturn(Optional.of(objUpd));
+        when(repository.findById("id-1")).thenReturn(Optional.of(vendaExistente));
         when(client.buscarProduto(anyLong())).thenReturn(produto);
-        when(repository.save(any())).thenReturn(objUpd);
+        when(repository.save(any())).thenReturn(vendaExistente);
 
-        Venda objRetorno = service.atualizar(objUpd);
+        Venda resultado = service.atualizar(vendaExistente);
 
+        assertEquals(18.0, resultado.getValorCompra());
         verify(repository, times(1)).findById("id-1");
-        verify(repository, times(1)).save(objUpd);
-        verify(client, times(1)).buscarProduto(1L);
-        verify(client, times(1)).buscarProduto(2L);
-        assertEquals(20.0, objRetorno.getValorCompra());
+        verify(repository, times(1)).save(vendaExistente);
     }
 
     @Test
-    @DisplayName("Deve retornar um erro ao tentar atualizar venda inexistente")
-    void deveRetornarUmErroAoTentarAtualizarVendaInexistente() {
-
-        Venda objUpd = Venda.builder()
+    @DisplayName("Deve lançar VendaNaoEncontradaException ao tentar atualizar venda inexistente")
+    void deveLancarExcecaoAoAtualizarVendaInexistente() {
+        Venda venda = Venda.builder()
                 .id("id-99")
                 .idProduto(List.of(1L))
                 .build();
 
         when(repository.findById("id-99")).thenReturn(Optional.empty());
 
-        assertThrows(RuntimeException.class, () -> service.atualizar(objUpd));
+        assertThrows(VendaNaoEncontradaException.class, () -> service.atualizar(venda));
 
         verify(repository, times(1)).findById("id-99");
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Deve lançar TipoPagamentoInvalidoException ao atualizar venda com tipoPagamento null")
+    void deveLancarExcecaoAoAtualizarVendaComTipoPagamentoNull() {
+        Venda vendaExistente = Venda.builder()
+                .id("id-1")
+                .idProduto(List.of(1L))
+                .tipoPagamento(null)
+                .build();
+
+        when(repository.findById("id-1")).thenReturn(Optional.of(vendaExistente));
+
+        assertThrows(TipoPagamentoInvalidoException.class, () -> service.atualizar(vendaExistente));
+
         verify(repository, never()).save(any());
     }
 }
