@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -61,7 +62,7 @@ public interface OpenApiController {
                     description = "Dados da venda realizada",
                     required = true,
                     content = @Content(schema = @Schema(implementation = Venda.class)))
-            @org.springframework.web.bind.annotation.RequestBody Venda venda);
+            @org.springframework.web.bind.annotation.RequestBody @Valid Venda venda);
 
     @Operation(summary = "Deletar uma venda")
     @Parameter(name = "id", in = PATH, required = true, description = "Deleta o registro da venda com base no identificador")
@@ -85,5 +86,5 @@ public interface OpenApiController {
                     description = "Dados que serão atualizados na venda",
                     required = true,
                     content = @Content(schema = @Schema(implementation = Venda.class)))
-            @org.springframework.web.bind.annotation.RequestBody Venda venda);
+            @org.springframework.web.bind.annotation.RequestBody @Valid Venda venda);
 }

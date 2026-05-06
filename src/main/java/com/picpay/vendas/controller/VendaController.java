@@ -2,6 +2,7 @@ package com.picpay.vendas.controller;
 
 import com.picpay.vendas.model.Venda;
 import com.picpay.vendas.service.VendaService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -30,13 +31,13 @@ public class VendaController implements OpenApiController {
     }
 
     @Override
-    public ResponseEntity<String> adicionarVenda(@RequestBody Venda venda) {
+    public ResponseEntity<String> adicionarVenda(@RequestBody @Valid Venda venda) {
         service.adicionar(venda);
         return ResponseEntity.status(HttpStatus.CREATED).body("Venda cadastrada com sucesso!");
     }
 
     @Override
-    public ResponseEntity<Object> atualizarVenda(@RequestBody Venda venda) {
+    public ResponseEntity<Object> atualizarVenda(@RequestBody @Valid Venda venda) {
         return ResponseEntity.ok(service.atualizar(venda));
     }
 
