@@ -4,7 +4,7 @@ import java.util.Arrays;
 
 public enum TipoPagamento {
     PIX ("PIX"),
-    CARTAO_CRADITO ("CARTAO_CREDITO"),
+    CARTAO_CREDITO ("CARTAO_CREDITO"),
     CARTAO_DEBITO ("CARTAO_DEBITO");
 
     private final String codigo;
@@ -17,9 +17,5 @@ public enum TipoPagamento {
         return codigo;
     }
 
-    public static boolean isCodigoValido(String codigo) {
-        return Arrays.stream(values())
-                .anyMatch(e -> e.codigo.equalsIgnoreCase(codigo));
-    }
 
 }

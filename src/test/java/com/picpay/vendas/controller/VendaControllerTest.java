@@ -23,6 +23,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.hamcrest.Matchers.containsString;
 
 
 @WebMvcTest(VendaController.class)
@@ -219,5 +220,34 @@ class VendaControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(venda)))
                 .andExpect(status().isInternalServerError());
+    }
+
+    @Test
+    @DisplayName("Deveria retornar 400 com mensagem descritiva ao enviar enum de pagamento inválido no JSON")
+    void deveriaRetornar400AoEnviarEnumInvalidoNoJson() throws Exception {
+        String jsonComEnumInvalido = """
+                {
+                    "idProduto": [1],
+                    "tipoPagamento": "BOLETO"
+                }
+                """;
+
+        mockMvc.perform(post("/v2/test-api/adicionar")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonComEnumInvalido))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string(containsString("Valores aceitos")));
+    }
+
+    @Test
+    @DisplayName("Deveria retornar 400 com mensagem genérica ao enviar JSON malformado")
+    void deveriaRetornar400AoEnviarJsonMalformado() throws Exception {
+        String jsonMalformado = "{ isso nao e json valido }";
+
+        mockMvc.perform(post("/v2/test-api/adicionar")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonMalformado))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Requisição inválida"));
     }
 }
