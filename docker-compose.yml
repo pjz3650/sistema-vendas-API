@@ -4,9 +4,9 @@ services:
   mongo:
     image: mongo:7.0
     environment:
-      MONGO_INITDB_ROOT_USERNAME: adm
-      MONGO_INITDB_ROOT_PASSWORD: adm123
-      MONGO_INITDB_DATABASE: sistema_produtos
+      MONGO_INITDB_ROOT_USERNAME: ~{.Env.MONGO_INITDB_ROOT_USERNAME }
+      MONGO_INITDB_ROOT_PASSWORD: ~{.Env.MONGO_INITDB_ROOT_PASSWORD }
+      MONGO_INITDB_DATABASE: ~{ .Env.MONGO_INITDB_DATABASE }
     ports:
       - "27017:27017"
 
@@ -19,4 +19,4 @@ services:
     depends_on:
       - mongo
     environment:
-      URI: mongodb://adm:adm123@mongo:27017/sistema_produtos?authSource=admin
+      URI: mongodb://{{ .Env.MONGO_INITDB_ROOT_USERNAME }}:{{ .Env.MONGO_INITDB_ROOT_PASSWORD }}@mongo:27017/{{ .Env.MONGO_INITDB_DATABASE }}?authSource=admin
