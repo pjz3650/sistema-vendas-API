@@ -15,8 +15,8 @@ services:
     env_file:
       - .env
     ports:
-      - "8081:8081"
+      - "8080:8080"
     depends_on:
       - mongo
     environment:
-      URI: mongodb://{{ .Env.MONGO_INITDB_ROOT_USERNAME }}:{{ .Env.MONGO_INITDB_ROOT_PASSWORD }}@mongo:27017/{{ .Env.MONGO_INITDB_DATABASE }}?authSource=admin
+      URI: ~{URI}

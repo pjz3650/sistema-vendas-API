@@ -6,10 +6,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
 import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
 @ControllerAdvice
 @Slf4j
@@ -62,6 +65,24 @@ public class ExceptionHandlerVenda {
         }
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Requisição inválida");
 
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<Map<String, Object>> methodArgumentNotValidHandler(MethodArgumentNotValidException ex) {
+        log.warn("Dados inválidos ou inconsistente: {}", ex.getMessage());
+
+        List<String> erros = ex.getBindingResult()
+                .getFieldErrors()
+                .stream()
+                .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                .toList();
+
+        Map<String, Object> body = Map.of(
+                "status", HttpStatus.BAD_REQUEST.value(),
+                "erros", erros
+        );
+
+        return ResponseEntity.badRequest().body(body);
     }
 
 }
