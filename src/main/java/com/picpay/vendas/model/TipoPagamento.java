@@ -1,6 +1,5 @@
 package com.picpay.vendas.model;
 
-import java.util.Arrays;
 
 public enum TipoPagamento {
     PIX ("PIX"),
