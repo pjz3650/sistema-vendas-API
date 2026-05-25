@@ -1,4 +1,4 @@
-package com.picpay.vendas.service;
+package com.picpay.vendas.publisher;
 
 import com.picpay.vendas.model.NotaFiscal;
 import org.springframework.cloud.stream.function.StreamBridge;

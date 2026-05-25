@@ -9,6 +9,8 @@ import com.picpay.vendas.model.Produto;
 import com.picpay.vendas.model.TipoPagamento;
 import com.picpay.vendas.model.Venda;
 import java.math.BigDecimal;
+
+import com.picpay.vendas.publisher.VendaPublisher;
 import com.picpay.vendas.repository.ProdutoClient;
 import com.picpay.vendas.repository.VendaRepository;
 import org.junit.jupiter.api.DisplayName;
