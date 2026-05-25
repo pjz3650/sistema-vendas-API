@@ -5,6 +5,7 @@ import com.picpay.vendas.exception.TipoPagamentoInvalidoException;
 import com.picpay.vendas.exception.VendaJaExistenteException;
 import com.picpay.vendas.exception.VendaNaoEncontradaException;
 import com.picpay.vendas.model.*;
+import com.picpay.vendas.publisher.VendaPublisher;
 import com.picpay.vendas.repository.ProdutoClient;
 import com.picpay.vendas.repository.VendaRepository;
 import io.github.resilience4j.retry.annotation.Retry;
@@ -23,14 +24,16 @@ public class VendaService {
 
     private final Fabrica fabrica;
 
+    private final VendaPublisher publisher;
 
     private final ProdutoClient client;
 
 
-    public VendaService(VendaRepository vendaRepository, ProdutoClient produtoClient, Fabrica fabrica) {
+    public VendaService(VendaRepository vendaRepository, ProdutoClient produtoClient, Fabrica fabrica, VendaPublisher publisher) {
         this.repository = vendaRepository;
         this.client = produtoClient;
         this.fabrica = fabrica;
+        this.publisher = publisher;
     }
 
     @Retry(name = "adicionarVendaRetry", fallbackMethod = "adicionarFallback")
@@ -53,7 +56,9 @@ public class VendaService {
         venda.setValorCompra(valorFinal);
 
         try {
-            return repository.save(venda);
+            var vendaSalva = repository.save(venda);
+            publisher.publicar(vendaSalva);
+            return vendaSalva;
         } catch (DuplicateKeyException e) {
             throw new VendaJaExistenteException("Essa venda já foi registrada...");
         }
@@ -78,12 +83,35 @@ public class VendaService {
     }
 
     public Venda atualizar(Venda venda) {
+
+        if (venda.getTipoPagamento() == null) {
+            throw new TipoPagamentoInvalidoException("Tipo de pagamento é obrigatório");
+        }
+
         return repository.findById(venda.getId())
                 .map(existente -> {
                     existente.setCliente(venda.getCliente());
                     existente.setIdProduto(venda.getIdProduto());
 
-                    return adicionar(existente);
+                    BigDecimal valorTotal = venda.getIdProduto().stream()
+                            .map(client::buscarProduto)
+                            .map(Produto::getPreco)
+                            .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+
+                    var implementacao = fabrica.devolverImplementacao(venda.getTipoPagamento());
+
+                    BigDecimal valorFinal = implementacao.calcularDesconto(valorTotal);
+
+                    venda.setValorCompra(valorFinal);
+
+                    try {
+                        var vendaSalva = repository.save(venda);
+                        publisher.publicar(vendaSalva);
+                        return vendaSalva;
+                    } catch (DuplicateKeyException e) {
+                        throw new VendaJaExistenteException("Essa venda já foi registrada...");
+                    }
                 })
                 .orElseThrow(() -> {
                     return new VendaNaoEncontradaException("Venda não encontrada");

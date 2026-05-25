@@ -18,13 +18,13 @@ public class Venda {
 
     @Id
     private String id;
-    @Size(min = 1, message = "A venda deve conter ao menos 1 prouto")
-    private List<Long> idProduto;
-    @NotEmpty(message = "Coloque todas as informações do cliente")
+    @Size(min = 1, message = "A venda deve conter ao menos 1 produto")
+    private List<String> idProduto;
+    @NotNull(message = "Coloque todas as informações do cliente")
     private Cliente cliente;
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private BigDecimal valorCompra;
-    @NotBlank(message = "Informe a forma de pagamento")
+    @NotNull(message = "Informe a forma de pagamento")
     private TipoPagamento tipoPagamento;
 
 

@@ -9,6 +9,8 @@ import com.picpay.vendas.model.Produto;
 import com.picpay.vendas.model.TipoPagamento;
 import com.picpay.vendas.model.Venda;
 import java.math.BigDecimal;
+
+import com.picpay.vendas.publisher.VendaPublisher;
 import com.picpay.vendas.repository.ProdutoClient;
 import com.picpay.vendas.repository.VendaRepository;
 import org.junit.jupiter.api.DisplayName;
@@ -37,6 +39,9 @@ class VendaServiceTest {
 
     @Mock
     private Fabrica fabrica;
+
+    @Mock
+    private VendaPublisher publisher;
 
     @InjectMocks
     private VendaService service;
@@ -270,6 +275,7 @@ class VendaServiceTest {
         Venda venda = Venda.builder()
                 .id("id-99")
                 .idProduto(List.of(1L))
+                .tipoPagamento(TipoPagamento.PIX)
                 .build();
 
         when(repository.findById("id-99")).thenReturn(Optional.empty());
@@ -289,10 +295,9 @@ class VendaServiceTest {
                 .tipoPagamento(null)
                 .build();
 
-        when(repository.findById("id-1")).thenReturn(Optional.of(vendaExistente));
-
         assertThrows(TipoPagamentoInvalidoException.class, () -> service.atualizar(vendaExistente));
 
+        verify(repository, never()).findById(any());
         verify(repository, never()).save(any());
     }
 }

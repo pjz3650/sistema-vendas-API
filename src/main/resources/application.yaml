@@ -1,5 +1,5 @@
 server:
-  port: 8081
+  port: 8080
 
 spring:
   config:
@@ -11,6 +11,19 @@ spring:
     name: vendas
     version: 1.0.0
   cloud:
+    stream:
+      kafka:
+        binder:
+          brokers: ${KAFKA_BROKER}
+      bindings:
+        vendaRealizada-out-0:
+          destination: venda-realizada-topico
+          group: vendas-service
+        vendaCadastradaEventConsumer-in-0:
+          destination: venda-realizada-topico
+          group: vendas-service
+        notaFiscalGerada-out-0:
+          destination: nota-fiscal-gerada-topico
     openfeign:
       client:
         config:
@@ -29,6 +42,7 @@ app:
 
 integrations:
   produto:
+    url: http://localhost:8081
     api-version: v1
 
 springdoc:

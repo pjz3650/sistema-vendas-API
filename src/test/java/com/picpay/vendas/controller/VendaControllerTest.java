@@ -16,6 +16,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -37,6 +38,20 @@ class VendaControllerTest {
 
     @MockitoBean
     private VendaService service;
+
+    private Venda vendaValida() {
+        return Venda.builder()
+                .id("id-1")
+                .tipoPagamento(TipoPagamento.PIX)
+                .idProduto(List.of(1L))
+                .cliente(Venda.Cliente.builder()
+                        .id("cli-1")
+                        .nome("João")
+                        .sobrenome("Silva")
+                        .credito(BigDecimal.valueOf(500))
+                        .build())
+                .build();
+    }
 
 
     @Test
@@ -88,10 +103,7 @@ class VendaControllerTest {
     @Test
     @DisplayName("Deveria retornar 201 ao inserir venda com sucesso")
     void deveriaRetornar201AoInserirVendaComSucesso() throws Exception {
-        Venda venda = Venda.builder()
-                .id("id-1")
-                .tipoPagamento(TipoPagamento.PIX)
-                .build();
+        Venda venda = vendaValida();
 
         when(service.adicionar(any())).thenReturn(venda);
 
@@ -104,7 +116,7 @@ class VendaControllerTest {
     @Test
     @DisplayName("Deveria retornar 409 ao inserir venda já registrada")
     void deveriaRetornar409AoInserirVendaJaRegistrada() throws Exception {
-        Venda venda = Venda.builder().id("id-1").build();
+        Venda venda = vendaValida();
 
         when(service.adicionar(any()))
                 .thenThrow(new VendaJaExistenteException("Essa venda já foi registrada..."));
@@ -119,7 +131,7 @@ class VendaControllerTest {
     @Test
     @DisplayName("Deveria retornar 503 quando serviço de produtos indisponível")
     void deveriaRetornar503QuandoServicoProdutosIndisponivel() throws Exception {
-        Venda venda = Venda.builder().id("id-1").build();
+        Venda venda = vendaValida();
 
         when(service.adicionar(any()))
                 .thenThrow(new ErroAoConectarComMsException("Serviço de produtos indisponível"));
@@ -134,7 +146,7 @@ class VendaControllerTest {
     @Test
     @DisplayName("Deveria retornar 422 ao inserir venda com tipo de pagamento inválido")
     void deveriaRetornar422AoInserirVendaComTipoPagamentoInvalido() throws Exception {
-        Venda venda = Venda.builder().id("id-1").build();
+        Venda venda = vendaValida();
 
         when(service.adicionar(any()))
                 .thenThrow(new TipoPagamentoInvalidoException("Tipo de pagamento é obrigatório"));
@@ -168,7 +180,7 @@ class VendaControllerTest {
     @Test
     @DisplayName("Deveria retornar 200 ao atualizar venda com sucesso")
     void deveriaRetornar200AoAtualizarVendaComSucesso() throws Exception {
-        Venda venda = Venda.builder().id("id-1").build();
+        Venda venda = vendaValida();
 
         when(service.atualizar(any())).thenReturn(venda);
 
@@ -182,7 +194,7 @@ class VendaControllerTest {
     @Test
     @DisplayName("Deveria retornar 404 ao tentar atualizar venda inexistente")
     void deveriaRetornar404AoAtualizarVendaInexistente() throws Exception {
-        Venda venda = Venda.builder().id("id-99").build();
+        Venda venda = vendaValida();
 
         when(service.atualizar(any()))
                 .thenThrow(new VendaNaoEncontradaException("Venda não encontrada"));
@@ -197,7 +209,7 @@ class VendaControllerTest {
     @Test
     @DisplayName("Deveria retornar 422 ao atualizar venda com tipo de pagamento inválido")
     void deveriaRetornar422AoAtualizarVendaComTipoPagamentoInvalido() throws Exception {
-        Venda venda = Venda.builder().id("id-1").build();
+        Venda venda = vendaValida();
 
         when(service.atualizar(any()))
                 .thenThrow(new TipoPagamentoInvalidoException("Tipo de pagamento é obrigatório"));
@@ -212,7 +224,7 @@ class VendaControllerTest {
     @Test
     @DisplayName("Deveria retornar 500 ao ocorrer erro interno inesperado")
     void deveriaRetornar500AoOcorrerErroInternoInesperado() throws Exception {
-        Venda venda = Venda.builder().id("id-1").build();
+        Venda venda = vendaValida();
 
         doThrow(new RuntimeException("erro inesperado")).when(service).atualizar(any());
 
