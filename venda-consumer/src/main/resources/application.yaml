@@ -1,0 +1,57 @@
+server:
+  port: 8082
+
+spring:
+  config:
+    import: optional:file:.env[.properties]
+  data:
+    mongodb:
+      uri: ${URI}
+  application:
+    name: venda-consumer
+    version: 1.0.0
+  cloud:
+    stream:
+      kafka:
+        binder:
+          brokers: ${KAFKA_BROKER}
+      bindings:
+        vendaCadastradaEventConsumer-in-0:
+          destination: venda-realizada-topico
+          group: venda-consumer-group
+        notaFiscalGerada-out-0:
+          destination: nota-fiscal-gerada-topico
+    openfeign:
+      client:
+        config:
+          default:
+            level: FULL
+            connectTimeout: 2000
+            readTimeout: 5000
+            loggerLevel: basic
+          produtoClient:
+            loggerLevel: full
+            connectTimeout: 1000
+            readTimeout: 3000
+
+app:
+  client-id: venda-consumer
+
+integrations:
+  produto:
+    url: http://localhost:8081
+    api-version: v1
+
+resilience4j:
+  retry:
+    instances:
+      adicionarVendaRetry:
+        maxAttempts: 5
+        waitDuration: 100
+        retry-exceptions:
+          - com.picpay.vendas.core.exception.ErroAoConectarComMsException
+
+logging:
+  level:
+    com.picpay.vendas: DEBUG
+    feign: DEBUG

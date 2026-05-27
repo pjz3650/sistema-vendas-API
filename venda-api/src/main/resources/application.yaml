@@ -1,0 +1,61 @@
+server:
+  port: 8080
+
+spring:
+  config:
+    import: optional:file:.env[.properties]
+  data:
+    mongodb:
+      uri: ${URI}
+  application:
+    name: venda-api
+    version: 1.0.0
+  cloud:
+    stream:
+      kafka:
+        binder:
+          brokers: ${KAFKA_BROKER}
+      bindings:
+        vendaRealizada-out-0:
+          destination: venda-realizada-topico
+          group: vendas-service
+    openfeign:
+      client:
+        config:
+          default:
+            level: FULL
+            connectTimeout: 2000
+            readTimeout: 5000
+            loggerLevel: basic
+          produtoClient:
+            loggerLevel: full
+            connectTimeout: 1000
+            readTimeout: 3000
+
+app:
+  client-id: venda-api
+
+integrations:
+  produto:
+    url: http://localhost:8081
+    api-version: v1
+
+springdoc:
+  swagger-ui:
+    path: /swagger
+  api-docs:
+    path: /openapi
+
+resilience4j:
+  retry:
+    instances:
+      adicionarVendaRetry:
+        maxAttempts: 5
+        waitDuration: 100
+        retry-exceptions:
+          - com.picpay.vendas.core.exception.ErroAoConectarComMsException
+
+logging:
+  level:
+    com.picpay.vendas: DEBUG
+    feign: DEBUG
