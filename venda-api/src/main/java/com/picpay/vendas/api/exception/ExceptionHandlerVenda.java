@@ -21,14 +21,13 @@ public class ExceptionHandlerVenda {
 
     @ExceptionHandler(ErroAoConectarComMsException.class)
     ResponseEntity<String> erroAoConectarMicrosservico(ErroAoConectarComMsException e) {
-        log.warn("Falha ao conectar com microsserviço: {}", e.getMessage());
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
                 .body(e.getMessage());
     }
 
     @ExceptionHandler(VendaJaExistenteException.class)
     ResponseEntity<String> conflitoAoInserirHandler(VendaJaExistenteException e) {
-        log.warn("Falha adicionar venda: {}", e.getMessage());
+        log.warn("Falha ao adicionar venda: {}", e.getMessage());
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(e.getMessage());
     }
@@ -49,7 +48,7 @@ public class ExceptionHandlerVenda {
 
     @ExceptionHandler(RuntimeException.class)
     ResponseEntity<String> runtimeExceptionHandler(RuntimeException e) {
-        log.error("Erro interno não tratado: {}", e.getMessage());
+        log.error("Erro interno não tratado", e);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(e.getMessage());
     }
@@ -67,21 +66,31 @@ public class ExceptionHandlerVenda {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Requisição inválida");
     }
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, Object>> methodArgumentNotValidHandler(MethodArgumentNotValidException ex) {
-        log.warn("Dados inválidos ou inconsistente: {}", ex.getMessage());
+    @ExceptionHandler(DadosInconsistentesException.class)
+    public ResponseEntity<String> dadosInconsistentesHandler(DadosInconsistentesException e) {
+        log.warn("Dados inconsistentes:  {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(e.getMessage());
+    }
 
-        List<String> erros = ex.getBindingResult()
-                .getFieldErrors()
-                .stream()
-                .map(error -> error.getField() + ": " + error.getDefaultMessage())
-                .toList();
+    @ExceptionHandler(ValidacaoFalhouException.class)
+    public ResponseEntity<String> validacaoFalhouHandler(ValidacaoFalhouException e) {
+        log.warn("Dados inválidos:  {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+                .body(e.getMessage());
+    }
 
-        Map<String, Object> body = Map.of(
-                "status", HttpStatus.BAD_REQUEST.value(),
-                "erros", erros
-        );
+    @ExceptionHandler(ProdutoNaoEncontradoException.class)
+    ResponseEntity<String> produtoNaoEncontradoHandler(ProdutoNaoEncontradoException e) {
+        log.warn("Produto não encontrado: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(e.getMessage());
+    }
 
-        return ResponseEntity.badRequest().body(body);
+    @ExceptionHandler(ValorRecebidoInvalidoException.class)
+    ResponseEntity<String> valorRecebidoInvalidoHandler(ValorRecebidoInvalidoException e) {
+        log.warn("Valores inconsistentes foram informados: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(e.getMessage());
     }
 }
