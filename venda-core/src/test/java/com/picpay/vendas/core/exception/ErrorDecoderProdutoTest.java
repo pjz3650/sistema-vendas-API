@@ -27,14 +27,14 @@ class ErrorDecoderProdutoTest {
     class DecodificarErro {
 
         @Test
-        @DisplayName("deve retornar ErroAoConectarComMsException para status 404")
+        @DisplayName("deve retornar ProdutoNaoEncontradoException para status 404")
         void deveRetornarErroParaStatus404() {
             Response response = criarResponse(404);
             Request request = Request.create(Request.HttpMethod.GET, "/test", Collections.emptyMap(), null, StandardCharsets.UTF_8);
 
             Exception exception = errorDecoder.decode("buscarProduto", response);
 
-            assertThat(exception).isInstanceOf(ErroAoConectarComMsException.class);
+            assertThat(exception).isInstanceOf(ProdutoNaoEncontradoException.class);
             assertThat(exception.getMessage()).isEqualTo("Produto não encontrado");
         }
 
@@ -50,14 +50,14 @@ class ErrorDecoderProdutoTest {
         }
 
         @Test
-        @DisplayName("deve retornar ErroAoConectarComMsException para status 400")
+        @DisplayName("deve retornar DadosInconsistentesException para status 400")
         void deveRetornarErroParaStatus400() {
             Response response = criarResponse(400);
 
             Exception exception = errorDecoder.decode("buscarProduto", response);
 
-            assertThat(exception).isInstanceOf(ErroAoConectarComMsException.class);
-            assertThat(exception.getMessage()).contains("Erro inesperado na API externa");
+            assertThat(exception).isInstanceOf(DadosInconsistentesException.class);
+            assertThat(exception.getMessage()).isEqualTo("Dados inconsistentes");
         }
 
         @Test
@@ -68,21 +68,10 @@ class ErrorDecoderProdutoTest {
             Exception exception = errorDecoder.decode("buscarProduto", response);
 
             assertThat(exception).isInstanceOf(ErroAoConectarComMsException.class);
-            assertThat(exception.getMessage()).contains("Status: 503");
-        }
-
-        @Test
-        @DisplayName("deve incluir status do erro na mensagem para casos default")
-        void deveIncluirStatusNaMensagem() {
-            Response response = criarResponse(502);
-
-            Exception exception = errorDecoder.decode("buscarProduto", response);
-
-            assertThat(exception.getMessage()).contains("502");
+            assertThat(exception.getMessage()).contains("API indisponível no momento");
         }
     }
 
-    // ========== HELPERS ==========
 
     private Response criarResponse(int status) {
         return Response.builder()

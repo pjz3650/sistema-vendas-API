@@ -25,10 +25,7 @@ public class ServiceConfig {
     }
 
     @Bean
-    public VendaService vendaService(VendaRepository vendaRepository,
-                                      ProdutoClient produtoClient,
-                                      Fabrica fabrica,
-                                      VendaPublisher publisher) {
+    public VendaService vendaService(VendaRepository vendaRepository, ProdutoClient produtoClient, Fabrica fabrica, VendaPublisher publisher) {
         return new VendaService(vendaRepository, produtoClient, fabrica, publisher);
     }
 

@@ -13,16 +13,24 @@ public class ErrorDecoderProduto implements ErrorDecoder {
     public Exception decode(String methodKey, Response response) {
         return switch (response.status()) {
             case 404 -> {
-                log.error("Produto não encontrado. Method: {}, Status: {}", methodKey, response.status());
-                yield new ErroAoConectarComMsException("Produto não encontrado");
+                log.warn("Produto não encontrado. Method: {}, Status: {}", methodKey, response.status());
+                yield new ProdutoNaoEncontradoException("Produto não encontrado");
             }
-            case 500 -> {
-                log.error("Erro interno na API externa. Method: {}, Status: {}", methodKey, response.status());
+            case 500, 502, 503, 504 -> {
+                log.error("Erro na API externa. Method: {}, Status: {}", methodKey, response.status());
                 yield new ErroAoConectarComMsException("API indisponível no momento");
+            }
+            case 400 -> {
+                log.warn("Há dados faltando ou os dados não forma passados corretamente. Method: {}, Status: {}", methodKey, response.status());
+                yield new DadosInconsistentesException("Dados inconsistentes");
+            }
+            case 422 -> {
+                log.warn("Alguns dados informados são inválidos. Method: {}, Status: {}", methodKey, response.status());
+                yield new ValidacaoFalhouException("Dados inválidos");
             }
             default -> {
                 log.error("Erro inesperado na API externa. Method: {}, Status: {}", methodKey, response.status());
-                yield new ErroAoConectarComMsException("Erro inesperado na API externa - Status: " + response.status());
+                yield new ErroIntegracaoException("Erro inesperado na API externa - Status: " + response.status());
             }
         };
     }

@@ -1,8 +1,10 @@
 package com.picpay.vendas.core.publisher;
 
 import com.picpay.vendas.core.model.Venda;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.stream.function.StreamBridge;
 
+@Slf4j
 public class VendaPublisher {
 
     private final StreamBridge streamBridge;
@@ -12,6 +14,10 @@ public class VendaPublisher {
     }
 
     public void publicar(Venda event) {
-        streamBridge.send("vendaRealizada-out-0", event);
+        boolean enviado = streamBridge.send("vendaRealizada-out-0", event);
+        if (enviado) {
+            log.debug("Evento vendaRealizada publicado. ID: {}", event.getId());
+        }
+        log.error("Falha ao publicar evento vendaRealizada. ID: {}", event.getId());
     }
 }

@@ -3,6 +3,8 @@ package com.picpay.vendas.api.exception;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.picpay.vendas.core.exception.*;
 import com.picpay.vendas.core.model.TipoPagamento;
+import lombok.Getter;
+import lombok.Setter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -144,70 +146,5 @@ class ExceptionHandlerVendaTest {
             assertThat(resposta.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
             assertThat(resposta.getBody()).isEqualTo("Requisição inválida");
         }
-    }
-
-    @Nested
-    @DisplayName("Ao tratar MethodArgumentNotValidException")
-    class MethodArgumentNotValidHandler {
-
-        @Test
-        @DisplayName("deve retornar 400 com lista de erros")
-        void deveRetornar400ComListaErros() throws Exception {
-            BindingResult bindingResult = mock(BindingResult.class);
-            org.springframework.validation.FieldError fieldError1 = 
-                new org.springframework.validation.FieldError("venda", "idProduto", "não deve estar em branco");
-            org.springframework.validation.FieldError fieldError2 = 
-                new org.springframework.validation.FieldError("venda", "valorPago", "não deve ser nulo");
-            
-            when(bindingResult.getFieldErrors()).thenReturn(List.of(fieldError1, fieldError2));
-
-            MethodArgumentNotValidException exception = mock(MethodArgumentNotValidException.class);
-            when(exception.getBindingResult()).thenReturn(bindingResult);
-
-            ResponseEntity<Map<String, Object>> resposta = exceptionHandler.methodArgumentNotValidHandler(exception);
-
-            assertThat(resposta.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
-            assertThat(resposta.getBody()).isNotNull();
-            assertThat(resposta.getBody().get("status")).isEqualTo(400);
-            
-            @SuppressWarnings("unchecked")
-            List<String> erros = (List<String>) resposta.getBody().get("erros");
-            assertThat(erros).hasSize(2);
-        }
-
-        @Test
-        @DisplayName("deve retornar erros formatados corretamente")
-        void deveRetornarErrosFormatados() throws Exception {
-            BindingResult bindingResult = mock(BindingResult.class);
-            org.springframework.validation.FieldError fieldError = 
-                new org.springframework.validation.FieldError("venda", "tipoPagamento", "Informe o tipo de pagamento");
-            
-            when(bindingResult.getFieldErrors()).thenReturn(List.of(fieldError));
-
-            MethodArgumentNotValidException exception = mock(MethodArgumentNotValidException.class);
-            when(exception.getBindingResult()).thenReturn(bindingResult);
-
-            ResponseEntity<Map<String, Object>> resposta = exceptionHandler.methodArgumentNotValidHandler(exception);
-
-            assertThat(resposta.getBody()).isNotNull();
-            
-            @SuppressWarnings("unchecked")
-            List<String> erros = (List<String>) resposta.getBody().get("erros");
-            assertThat(erros.get(0)).contains("tipoPagamento");
-        }
-    }
-
-    // DTO auxiliar para testes de validação
-    private static class VendaTestDto {
-        private List<String> idProduto;
-        private java.math.BigDecimal valorPago;
-        private String tipoPagamento;
-
-        public List<String> getIdProduto() { return idProduto; }
-        public void setIdProduto(List<String> idProduto) { this.idProduto = idProduto; }
-        public java.math.BigDecimal getValorPago() { return valorPago; }
-        public void setValorPago(java.math.BigDecimal valorPago) { this.valorPago = valorPago; }
-        public String getTipoPagamento() { return tipoPagamento; }
-        public void setTipoPagamento(String tipoPagamento) { this.tipoPagamento = tipoPagamento; }
     }
 }

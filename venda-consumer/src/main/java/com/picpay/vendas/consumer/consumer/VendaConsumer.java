@@ -30,10 +30,13 @@ public class VendaConsumer {
 
     public void processar(Message<VendaEvent> event) {
         log.info("Recebendo evento de venda: {}", event.getPayload().getId());
-        
+        try {
         NotaFiscal notaFiscal = notaFiscalService.gerarNota(event.getPayload());
         notaFiscalPublisher.publicar(notaFiscal);
         
         log.info("Nota fiscal gerada: {}", notaFiscal.getNumero());
+    } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }

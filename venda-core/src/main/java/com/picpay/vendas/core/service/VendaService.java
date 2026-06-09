@@ -33,6 +33,8 @@ public class VendaService {
     @Retry(name = "adicionarVendaRetry", fallbackMethod = "adicionarFallback")
     public Venda adicionar(Venda venda) {
 
+        log.info("Processando venda. ID: {}, clienteId: {}", venda.getId(), venda.getCliente().getId());
+
         if (venda.getTipoPagamento() == null) {
             throw new TipoPagamentoInvalidoException("Tipo de pagamento é obrigatório");
         }
@@ -55,6 +57,7 @@ public class VendaService {
             venda.setStatus(APROVADA);
             var vendaSalva = repository.save(venda);
             publisher.publicar(vendaSalva);
+            log.info("Venda cadastrada e publicada com sucesso! ID: {}", vendaSalva.getId());
             return vendaSalva;
         } catch (DuplicateKeyException e) {
             error(venda);
@@ -80,6 +83,8 @@ public class VendaService {
 
     public Venda atualizar(Venda venda) {
 
+        log.info("Atualizando venda. ID: {}", venda.getId());
+
         if (venda.getTipoPagamento() == null) {
             throw new TipoPagamentoInvalidoException("Tipo de pagamento é obrigatório");
         }
@@ -101,6 +106,8 @@ public class VendaService {
                     existente.setValorCompra(implementacao.calcularDesconto(valorTotal));
 
                     if (!validar(existente)) {
+                        log.warn("Venda cancelada na atualização. ID: {}, valorPago: {}, valorCompra: {}",
+                            venda.getId(), venda.getValorPago(), venda.getValorCompra());
                         cancelar(existente);
                         throw new ValorRecebidoInvalidoException("Valor recebido inválido");
                     }
@@ -108,6 +115,7 @@ public class VendaService {
                     aprovar(existente);
                     var vendaSalva = repository.save(existente);
                     publisher.publicar(vendaSalva);
+                    log.info("Venda atualizada com sucesso. ID: {}", vendaSalva.getId());
                     return vendaSalva;
                 })
                 .orElseThrow(() -> {
@@ -150,6 +158,7 @@ public class VendaService {
     }
 
     public Venda adicionarFallback(Exception e) {
+        log.error("Falha ao conectar com ms-produto. Causa: {}", e.getMessage());
         throw new ErroAoConectarComMsException("Serviço de produtos indisponível");
     }
 }
